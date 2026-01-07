@@ -90,10 +90,48 @@ async def generate_persona_report(messages: List[Dict]):
         logger.error(f"OpenAI error: {e}")
         return {"summary": f"Error parsing: {str(e)}", "profile": {}}
 
+from backend.parser import parse_kakao_talk
+
 def confirm_persona_processing(job_id: str, file_path: str, profile: Dict):
+    logger.info(f"Starting memory construction for job {job_id}")
+    
+    # 1. Parse full file
+    messages = parse_kakao_talk(file_path)
+    if not messages:
+        logger.error("No messages found to embed")
+        return
+
+    # 2. Chunking (group by ~5 messages for context)
+    chunks = []
+    current_chunk = []
+    for msg in messages:
+        current_chunk.append(f"[{msg['speaker']}] {msg['text']}")
+        if len(current_chunk) >= 5:
+            chunks.append("\n".join(current_chunk))
+            current_chunk = []
+    if current_chunk:
+        chunks.append("\n".join(current_chunk))
+
+    # 3. Embedding & Storage
+    if chunks and collection:
+        logger.info(f"Embedding {len(chunks)} chunks...")
+        # Note: In a real production app, we'd use get_jina_embedding
+        # For this MVP environment, we use Chroma's default embedding function
+        # which is often sufficient for small tests.
+        try:
+            collection.add(
+                documents=chunks,
+                ids=[f"{job_id}_{i}" for i in range(len(chunks))],
+                metadatas=[{"job_id": job_id} for _ in chunks]
+            )
+            logger.info("Successfully stored chunks in ChromaDB")
+        except Exception as e:
+            logger.error(f"Error storing in Chroma: {e}")
+
+    # 4. Secure Delete
     if os.path.exists(file_path):
         os.remove(file_path)
-    pass
+        logger.info(f"Deleted original file: {file_path}")
 
 async def stream_chat_response(session_id: str, message: str, agent_enabled: bool):
     client = get_openai_client()
@@ -101,10 +139,31 @@ async def stream_chat_response(session_id: str, message: str, agent_enabled: boo
         yield f"data: {json.dumps({'text': 'System: API Key missing.'})}\n\n"
         return
 
+    # RAG Lookup
+    context = ""
+    if collection:
+        try:
+            results = collection.query(
+                query_texts=[message],
+                n_results=3
+            )
+            if results and results['documents']:
+                context = "\n".join(results['documents'][0])
+                logger.info(f"RAG context found: {len(context)} chars")
+        except Exception as e:
+            logger.error(f"RAG query error: {e}")
+
+    system_content = "You are an AI assistant mimicking a specific persona based on chat logs."
+    if context:
+        system_content += f"\n\nRelevant context from past conversations:\n{context}"
+
     try:
         stream = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role": "user", "content": message}],
+            messages=[
+                {"role": "system", "content": system_content},
+                {"role": "user", "content": message}
+            ],
             stream=True
         )
         for chunk in stream:
