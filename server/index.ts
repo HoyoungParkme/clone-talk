@@ -2,9 +2,24 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { spawn } from "child_process";
 
 const app = express();
 const httpServer = createServer(app);
+
+// Start Python Backend
+const pythonProcess = spawn("python3", ["-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"], {
+  stdio: "inherit",
+  shell: true
+});
+
+pythonProcess.on('error', (err) => {
+  console.error('Failed to start Python backend:', err);
+});
+
+process.on('exit', () => {
+  pythonProcess.kill();
+});
 
 declare module "http" {
   interface IncomingMessage {
