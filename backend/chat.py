@@ -71,10 +71,27 @@ async def generate_persona_report(messages: List[Dict]):
             }
         }
     
-    sample_msgs = messages[-100:]
+    sample_msgs = messages[-200:]
     conversation_text = "\n".join([f"{m['ts']} {m['speaker']}: {m['text']}" for m in sample_msgs])
     
-    system_prompt = "Analyze the following chat log and create a Persona Report. Output JSON strictly matching the PersonaReport schema."
+    system_prompt = """Analyze the chat logs and create a Persona Report. 
+You MUST return a JSON object with two fields:
+1. "summary": A text summary of the personalities and relationship.
+2. "profile": A JSON object matching the PersonaProfile schema:
+{
+  "nickname_rules": string[],
+  "speech_style": {
+    "endings": string[],
+    "honorific_level": "informal" | "polite" | "mixed",
+    "emoji_usage": "low" | "medium" | "high",
+    "punctuation": "short" | "normal" | "many"
+  },
+  "favorite_topics": string[],
+  "taboo_topics": string[],
+  "response_length": "short" | "medium" | "long",
+  "typical_patterns": string[],
+  "few_shot_examples": [{"user": string, "persona": string}]
+}"""
     
     try:
         response = client.chat.completions.create(
@@ -85,10 +102,49 @@ async def generate_persona_report(messages: List[Dict]):
             ],
             response_format={ "type": "json_object" }
         )
-        return json.loads(response.choices[0].message.content)
+        raw_content = response.choices[0].message.content
+        data = json.loads(raw_content)
+        
+        # Robust parsing: check if AI wrapped it in a "PersonaReport" key or similar
+        if "PersonaReport" in data:
+            data = data["PersonaReport"]
+        
+        # Ensure fields exist for validation
+        if "summary" not in data:
+            data["summary"] = "Analyzed Persona"
+        if "profile" not in data:
+            # Try to find profile-like data in nested keys if summary exists elsewhere
+            for key in ["profile", "PersonaProfile", "persona_profile"]:
+                if key in data:
+                    data["profile"] = data.pop(key)
+                    break
+            else:
+                # Default empty profile if missing
+                data["profile"] = {
+                    "nickname_rules": [],
+                    "speech_style": {"endings": [], "honorific_level": "mixed", "emoji_usage": "medium", "punctuation": "normal"},
+                    "favorite_topics": [],
+                    "taboo_topics": [],
+                    "response_length": "medium",
+                    "typical_patterns": [],
+                    "few_shot_examples": []
+                }
+        
+        return data
     except Exception as e:
         logger.error(f"OpenAI error: {e}")
-        return {"summary": f"Error parsing: {str(e)}", "profile": {}}
+        return {
+            "summary": f"Error analyzing logs: {str(e)}",
+            "profile": {
+                "nickname_rules": [],
+                "speech_style": {"endings": [], "honorific_level": "mixed", "emoji_usage": "medium", "punctuation": "normal"},
+                "favorite_topics": [],
+                "taboo_topics": [],
+                "response_length": "medium",
+                "typical_patterns": [],
+                "few_shot_examples": []
+            }
+        }
 
 from backend.parser import parse_kakao_talk
 
