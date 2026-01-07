@@ -109,6 +109,23 @@ You MUST return a JSON object with two fields:
         if "PersonaReport" in data:
             data = data["PersonaReport"]
         
+        # Cleanup profile data to match schema exactly
+        if "profile" in data:
+            p = data["profile"]
+            # Ensure speech_style fields
+            if "speech_style" in p:
+                ss = p["speech_style"]
+                for field, default in [("endings", []), ("honorific_level", "mixed"), ("emoji_usage", "medium"), ("punctuation", "normal")]:
+                    if field not in ss: ss[field] = default
+            
+            # Ensure few_shot_examples is a list of {user, persona}
+            if "few_shot_examples" in p:
+                cleaned_examples = []
+                for ex in p["few_shot_examples"]:
+                    if isinstance(ex, dict) and "user" in ex and "persona" in ex:
+                        cleaned_examples.append({"user": str(ex["user"]), "persona": str(ex["persona"])})
+                p["few_shot_examples"] = cleaned_examples
+
         # Ensure fields exist for validation
         if "summary" not in data:
             data["summary"] = "Analyzed Persona"

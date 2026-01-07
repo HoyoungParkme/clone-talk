@@ -1,6 +1,10 @@
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 
+class FewShotExample(BaseModel):
+    user: str
+    persona: str
+
 class PersonaProfile(BaseModel):
     nickname_rules: List[str]
     speech_style: Dict[str, Any]
@@ -8,7 +12,7 @@ class PersonaProfile(BaseModel):
     taboo_topics: List[str]
     response_length: str
     typical_patterns: List[str]
-    few_shot_examples: List[Dict[str, str]]
+    few_shot_examples: List[FewShotExample]
 
 class PersonaReport(BaseModel):
     summary: str
