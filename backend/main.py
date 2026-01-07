@@ -42,11 +42,11 @@ app.add_middleware(
 jobs = {}
 settings = Settings(agent_enabled=False)
 
-@app.get("/api/health")
+@app.get("/health")
 def health_check():
     return {"ok": True}
 
-@app.post("/api/upload")
+@app.post("/upload")
 async def upload_file(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
     job_id = str(uuid.uuid4())
     temp_path = f"/tmp/{job_id}_{file.filename}"
@@ -84,13 +84,13 @@ async def process_upload(job_id: str):
         if os.path.exists(jobs[job_id]["file_path"]):
             os.remove(jobs[job_id]["file_path"])
 
-@app.get("/api/jobs/{job_id}", response_model=JobResponse)
+@app.get("/jobs/{job_id}", response_model=JobResponse)
 def get_job(job_id: str):
     if job_id not in jobs:
         raise HTTPException(status_code=404, detail="Job not found")
     return jobs[job_id]
 
-@app.post("/api/persona/confirm")
+@app.post("/persona/confirm")
 async def confirm_persona(background_tasks: BackgroundTasks, payload: dict):
     job_id = payload.get("job_id")
     profile_data = payload.get("persona_profile")
@@ -106,24 +106,24 @@ async def confirm_persona(background_tasks: BackgroundTasks, payload: dict):
     )
     return {"ok": True}
 
-@app.post("/api/chat/stream")
+@app.post("/chat/stream")
 async def chat_stream(req: ChatRequest):
     return StreamingResponse(
         stream_chat_response(req.session_id, req.message, req.agent_enabled),
         media_type="text/event-stream"
     )
 
-@app.get("/api/settings", response_model=Settings)
+@app.get("/settings", response_model=Settings)
 def get_settings():
     return settings
 
-@app.post("/api/settings", response_model=Settings)
+@app.post("/settings", response_model=Settings)
 def update_settings(new_settings: Settings):
     global settings
     settings = new_settings
     return settings
 
-@app.get("/api/agent/poll", response_model=AgentPollResponse)
+@app.get("/agent/poll", response_model=AgentPollResponse)
 def agent_poll(session_id: str):
     return get_agent_poll(session_id, settings.agent_enabled)
 
