@@ -46,10 +46,11 @@ export function useJobStatus(jobId: string | null) {
       if (data.status === "done" || data.status === "error") {
         return false;
       }
-      return 2000; // Increased to 2s to reduce load
+      return 3000; // Increased to 3s to reduce load
     },
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 5000,
+    gcTime: 10000,
+    retry: 1,
   });
 }
 
