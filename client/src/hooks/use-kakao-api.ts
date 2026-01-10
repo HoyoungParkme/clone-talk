@@ -43,9 +43,13 @@ export function useJobStatus(jobId: string | null) {
       const data = query.state.data;
       if (!data) return 1000;
       // Stop polling if done or error
-      if (data.status === "done" || data.status === "error") return false;
-      return 1000; // Poll every 1s
+      if (data.status === "done" || data.status === "error") {
+        return false;
+      }
+      return 2000; // Increased to 2s to reduce load
     },
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 

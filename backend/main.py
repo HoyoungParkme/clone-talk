@@ -65,19 +65,25 @@ async def upload_file(background_tasks: BackgroundTasks, file: UploadFile = File
 
 async def process_upload(job_id: str):
     try:
+        logger.info(f"Background task started for job {job_id}")
         jobs[job_id]["status"] = "running"
         jobs[job_id]["progress"] = 10
         
         file_path = jobs[job_id]["file_path"]
+        logger.info(f"Parsing file: {file_path}")
         messages = parse_kakao_talk(file_path)
+        logger.info(f"Parsed {len(messages)} messages")
         jobs[job_id]["progress"] = 50
         
+        logger.info(f"Generating persona report for job {job_id}")
         report = await generate_persona_report(messages)
         jobs[job_id]["report"] = report
         jobs[job_id]["progress"] = 100
         jobs[job_id]["status"] = "done"
+        logger.info(f"Job {job_id} completed successfully")
         
     except Exception as e:
+        logger.error(f"Error processing job {job_id}: {str(e)}")
         jobs[job_id]["status"] = "error"
         jobs[job_id]["error"] = str(e)
         # Cleanup on error
