@@ -1,0 +1,9 @@
+.git
+.venv
+.DS_Store
+node_modules
+dist
+docs
+backend/__pycache__
+backend/data
+backend/attached_assets

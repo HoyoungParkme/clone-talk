@@ -1,6 +1,12 @@
 node_modules
 dist
 .DS_Store
-server/public
+.venv
+backend/data
+backend/__pycache__
 vite.config.ts.*
 *.tar.gz
+.env
+.env.*
+!.env.example
+*:Zone.Identifier

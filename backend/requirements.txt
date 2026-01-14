@@ -1,7 +1,9 @@
 fastapi
 uvicorn[standard]
 python-multipart
+python-dotenv==1.0.1
 chromadb
 anthropic
+openai==2.14.0
 requests
 pydantic
