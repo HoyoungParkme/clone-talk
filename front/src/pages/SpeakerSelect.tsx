@@ -82,14 +82,14 @@ export default function SpeakerSelect() {
   };
 
   return (
-    <Layout title="화자 선택" className="bg-slate-50">
+    <Layout title="Memory Talk" className="bg-slate-50">
       <div className="flex-1 p-6 space-y-6">
         <Card className="p-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-kakao-yellow/20 flex items-center justify-center">
             <Users className="w-5 h-5 text-kakao-brown" />
           </div>
           <div>
-            <p className="text-sm font-bold text-slate-800">페르소나로 만들 대상을 선택하세요</p>
+            <p className="text-sm font-bold text-slate-800">이야기할 사람을 선택하세요</p>
             <p className="text-xs text-slate-500">선택한 사람의 말투로 분석합니다</p>
           </div>
         </Card>

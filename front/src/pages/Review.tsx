@@ -62,7 +62,7 @@ export default function Review() {
 
   return (
     <Layout 
-        title="페르소나 검토" 
+        title="Memory Talk" 
         className="bg-slate-50"
         action={
             <Button 

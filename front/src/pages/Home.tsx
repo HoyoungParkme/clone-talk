@@ -61,10 +61,10 @@ export default function Home() {
             <MessageCircle className="w-10 h-10 text-kakao-yellow" />
           </div>
           <h1 className="text-3xl font-extrabold text-kakao-brown mb-2 font-display">
-            카카오클론
+            Memory Talk 
           </h1>
           <p className="text-kakao-brown/70 font-medium">
-            대화 로그를 업로드해 페르소나를 생성하세요
+            그리운 사람과 다시 대화해요
           </p>
         </motion.div>
 
